@@ -1,10 +1,11 @@
 {
   "name": "7g-whatsapp-pro-bot",
   "version": "1.0.0",
-  "description": "🤖 Service WhatsApp professionnel pour 7G Connect",
-  "main": "server.js",
+  "description": "Service WhatsApp professionnel pour 7G Connect",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node src/server.js",
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "axios": "^1.6.0",
