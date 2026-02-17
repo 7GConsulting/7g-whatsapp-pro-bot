@@ -25,40 +25,45 @@ const API_TOKEN = process.env.API_TOKEN || 'wx78hj39dk45ls92nq61bv83';
 const LARAVEL_API_URL = 'https://7g-connect.yoovoyagedz.com/api';
 
 // ============================================
-// INITIALISATION WHATSAPP - VERSION RENDER FINALE CORRIGÉE
+// INITIALISATION WHATSAPP - VERSION ULTIME
 // ============================================
 
-// Chemin DIRECT vers Chrome (basé sur les logs de build)
-let CHROME_PATH = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome';
+console.log('[CHROME] 🔍 Recherche automatique...');
 
-console.log('[CHROME] 🔍 Vérification du chemin:', CHROME_PATH);
+// Utiliser le module find pour localiser Chrome
+const { execSync } = require('child_process');
+let chromePath = null;
 
-// Vérifier si le fichier existe (fs déjà importé en haut)
-if (fs.existsSync(CHROME_PATH)) {
-    console.log('[CHROME] ✅ Fichier trouvé!');
-} else {
-    console.log('[CHROME] ⚠️ Fichier non trouvé, tentative de recherche...');
-    
-    // Recherche alternative
-    const { execSync } = require('child_process');
-    try {
-        const foundPath = execSync('find /opt/render/.cache/puppeteer -name chrome -type f 2>/dev/null | head -1').toString().trim();
-        if (foundPath) {
-            console.log('[CHROME] ✅ Trouvé via find:', foundPath);
-            CHROME_PATH = foundPath;
-        }
-    } catch (e) {
-        console.log('[CHROME] ❌ Recherche échouée');
+try {
+    // Chercher chrome dans tout le répertoire de cache
+    const result = execSync('find /opt/render -name chrome -type f 2>/dev/null | head -1').toString().trim();
+    if (result) {
+        chromePath = result;
+        console.log('[CHROME] ✅ Trouvé via find:', chromePath);
     }
+} catch (e) {
+    console.log('[CHROME] ❌ Recherche par find échouée');
 }
 
+// Si non trouvé, utiliser le chemin par défaut de Puppeteer (sans executablePath)
 const client = new Client({
     authStrategy: new LocalAuth({
         clientId: '7g-connect-bot'
     }),
-    puppeteer: {
+    puppeteer: chromePath ? {
         headless: true,
-        executablePath: CHROME_PATH,
+        executablePath: chromePath,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process'
+        ]
+    } : {
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
