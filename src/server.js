@@ -35,11 +35,11 @@ function findChromePath() {
         const chromePath = execSync('find /opt/render/.cache/puppeteer -name chrome -type f 2>/dev/null | head -1').toString().trim();
         
         if (chromePath) {
-            console.log(`[CHROME] ✅ Trouvé: ${chromePath}`);
+            console.log(`[CHROME] â Trouvé: ${chromePath}`);
             return chromePath;
         }
     } catch (e) {
-        console.log('[CHROME] ⚠️ Recherche automatique échouée');
+        console.log('[CHROME] â ï¸ Recherche automatique échouée');
     }
     
     // Chemins alternatifs au cas où
@@ -48,14 +48,36 @@ function findChromePath() {
         '/opt/render/.cache/puppeteer/chrome/chrome-linux64/chrome'
     ];
     
-    console.log('[CHROME] ℹ️ Utilisation du chemin par défaut Puppeteer');
+    console.log('[CHROME] â¹ï¸ Utilisation du chemin par défaut Puppeteer');
     return null;
 }
 
 // ============================================
-// INITIALISATION WHATSAPP - OPTIMISÉ POUR RENDER
+// INITIALISATION WHATSAPP - VERSION RENDER FINALE
 // ============================================
-const chromePath = findChromePath();
+
+// Chemin DIRECT vers Chrome (basé sur les logs de build)
+const CHROME_PATH = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome';
+
+console.log('[CHROME] 🔍 Vérification du chemin:', CHROME_PATH);
+
+// Vérifier si le fichier existe (optionnel mais utile)
+const fs = require('fs');
+if (fs.existsSync(CHROME_PATH)) {
+    console.log('[CHROME] ✅ Fichier trouvé!');
+} else {
+    console.log('[CHROME] ⚠️ Fichier non trouvé, tentative de recherche...');
+    
+    // Recherche alternative
+    const { execSync } = require('child_process');
+    try {
+        const foundPath = execSync('find /opt/render/.cache/puppeteer -name chrome -type f 2>/dev/null | head -1').toString().trim();
+        if (foundPath) {
+            console.log('[CHROME] ✅ Trouvé via find:', foundPath);
+            CHROME_PATH = foundPath;
+        }
+    } catch (e) {}
+}
 
 const client = new Client({
     authStrategy: new LocalAuth({
@@ -63,7 +85,7 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
-        executablePath: chromePath,
+        executablePath: CHROME_PATH,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -84,14 +106,14 @@ let clientInfo = null;
 // GESTION DU QR CODE
 // ============================================
 client.on('qr', (qr) => {
-    console.log('\n[QR] 🔵 NOUVEAU QR CODE GÉNÉRÉ :');
+    console.log('\n[QR] ðµ NOUVEAU QR CODE GÉNÉRÉ :');
     qrcode.generate(qr, { small: true });
-    console.log('\n[SCAN] 📱 Scannez ce QR code avec votre WhatsApp pour connecter le bot');
+    console.log('\n[SCAN] ð± Scannez ce QR code avec votre WhatsApp pour connecter le bot');
     
     // Sauvegarder le QR pour affichage web
     if (!fs.existsSync('public')) fs.mkdirSync('public');
     require('qrcode').toFile('public/qr.png', qr, function(err) {
-        if (!err) console.log('[QR] ✅ QR code sauvegardé dans public/qr.png');
+        if (!err) console.log('[QR] â QR code sauvegardé dans public/qr.png');
     });
 });
 
@@ -99,12 +121,12 @@ client.on('qr', (qr) => {
 // CONNEXION RÉUSSIE
 // ============================================
 client.on('ready', async () => {
-    console.log('\n[SUCCÈS] 🟢 WhatsApp connecté avec succès !');
+    console.log('\n[SUCCÈS] ð¢ WhatsApp connecté avec succès !');
     isReady = true;
     
     // Récupérer les infos du compte
     clientInfo = client.info;
-    console.log(`[INFO] 📱 Connecté en tant que: ${clientInfo.pushname} (${clientInfo.me.user})`);
+    console.log(`[INFO] ð± Connecté en tant que: ${clientInfo.pushname} (${clientInfo.me.user})`);
     
     // Notifier Laravel que le bot est prêt
     try {
@@ -115,9 +137,9 @@ client.on('ready', async () => {
         }, {
             headers: { 'Authorization': `Bearer ${API_TOKEN}` }
         });
-        console.log('[INFO] ✅ Notification envoyée à Laravel');
+        console.log('[INFO] â Notification envoyée à Laravel');
     } catch (error) {
-        console.error('[ERREUR] ❌ Notification Laravel:', error.message);
+        console.error('[ERREUR] â Notification Laravel:', error.message);
     }
 });
 
@@ -125,7 +147,7 @@ client.on('ready', async () => {
 // RECEVOIR LES MESSAGES
 // ============================================
 client.on('message', async (message) => {
-    console.log(`[MESSAGE] 📩 De ${message.from}: ${message.body.substring(0, 50)}${message.body.length > 50 ? '...' : ''}`);
+    console.log(`[MESSAGE] ð© De ${message.from}: ${message.body.substring(0, 50)}${message.body.length > 50 ? '...' : ''}`);
     
     // Envoyer la notification à Laravel
     try {
@@ -143,10 +165,10 @@ client.on('message', async (message) => {
         if (message.body.toLowerCase().includes('signature') || 
             message.body.toLowerCase().includes('engagement')) {
             await message.reply('[SIGNATURE] Votre demande de signature a été reçue. Un lien vous sera envoyé sous peu.');
-            console.log('[MESSAGE] ✅ Réponse automatique envoyée');
+            console.log('[MESSAGE] â Réponse automatique envoyée');
         }
     } catch (error) {
-        console.error('[ERREUR] ❌ Webhook Laravel:', error.message);
+        console.error('[ERREUR] â Webhook Laravel:', error.message);
     }
 });
 
@@ -154,7 +176,7 @@ client.on('message', async (message) => {
 // DÉCONNEXION
 // ============================================
 client.on('disconnected', (reason) => {
-    console.log('[DÉCONNECTÉ] 🔴 WhatsApp déconnecté:', reason);
+    console.log('[DÉCONNECTÉ] ð´ WhatsApp déconnecté:', reason);
     isReady = false;
     
     // Notifier Laravel
@@ -230,7 +252,7 @@ app.post('/api/send-signature', authenticate, async (req, res) => {
     try {
         const chatId = to.includes('@') ? to : `${to}@c.us`;
         
-        const message = `🩺 *7G Connect - Engagement sur l'honneur*\n\n` +
+        const message = `ð©º *7G Connect - Engagement sur l'honneur*\n\n` +
             `Bonjour Dr. ${doctorName},\n\n` +
             `Pour finaliser votre inscription, veuillez cliquer sur le lien ci-dessous :\n\n` +
             `${signatureUrl}\n\n` +
@@ -263,7 +285,7 @@ app.post('/api/send-verification', authenticate, async (req, res) => {
     try {
         const chatId = to.includes('@') ? to : `${to}@c.us`;
         
-        const message = `🔐 *Code de vérification 7G Connect*\n\n` +
+        const message = `ð *Code de vérification 7G Connect*\n\n` +
             `Votre code est : *${code}*\n\n` +
             `Ce code est valable 10 minutes.`;
         
@@ -285,7 +307,7 @@ app.post('/api/send-verification', authenticate, async (req, res) => {
 app.get('/', (req, res) => {
     const qrExists = fs.existsSync('public/qr.png');
     const statusClass = isReady ? 'connected' : 'waiting';
-    const statusText = isReady ? '✅ Connecté' : '⏳ En attente de scan';
+    const statusText = isReady ? 'â Connecté' : 'â³ En attente de scan';
     
     res.send(`
         <!DOCTYPE html>
@@ -350,7 +372,7 @@ app.get('/', (req, res) => {
         </head>
         <body>
             <div class="container">
-                <h1>📱 7G Connect</h1>
+                <h1>ð± 7G Connect</h1>
                 <p>Service WhatsApp professionnel</p>
                 
                 <div class="status ${statusClass}">
@@ -365,13 +387,13 @@ app.get('/', (req, res) => {
                 
                 ${clientInfo ? `
                 <div class="info">
-                    <p><strong>📱 Connecté en tant que:</strong><br>
+                    <p><strong>ð± Connecté en tant que:</strong><br>
                     ${clientInfo.pushname} (${clientInfo.me.user})</p>
                 </div>
                 ` : ''}
                 
                 <div class="info">
-                    <p><strong>🔌 API Endpoints</strong></p>
+                    <p><strong>ð API Endpoints</strong></p>
                     <p style="font-size: 12px; text-align: left;">
                     • GET  /api/status - Vérifier le statut<br>
                     • POST /api/send-message - Envoyer un message<br>
@@ -403,9 +425,9 @@ app.use(express.static('public'));
 // DÉMARRAGE DU SERVEUR
 // ============================================
 app.listen(PORT, () => {
-    console.log(`[SERVER] 🌐 Serveur web démarré sur le port ${PORT}`);
-    console.log(`[SERVER] 🔑 Token API: ${API_TOKEN.substring(0, 8)}...`);
-    console.log('[SERVER] 🚀 Démarrage du client WhatsApp...');
+    console.log(`[SERVER] ð Serveur web démarré sur le port ${PORT}`);
+    console.log(`[SERVER] ð Token API: ${API_TOKEN.substring(0, 8)}...`);
+    console.log('[SERVER] ð Démarrage du client WhatsApp...');
 });
 
 // Démarrer le client WhatsApp
@@ -413,13 +435,13 @@ client.initialize();
 
 // Gestion de l'arrêt
 process.on('SIGINT', async () => {
-    console.log('\n[ARRÊT] 🛑 Arrêt du service...');
+    console.log('\n[ARRÊT] ð Arrêt du service...');
     await client.destroy();
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-    console.log('\n[ARRÊT] 🛑 Arrêt du service...');
+    console.log('\n[ARRÊT] ð Arrêt du service...');
     await client.destroy();
     process.exit(0);
 });
