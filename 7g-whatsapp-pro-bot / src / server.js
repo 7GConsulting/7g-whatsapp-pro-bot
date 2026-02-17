@@ -372,4 +372,5 @@ process.on('SIGINT', async () => {
     console.log('\n🛑 Arrêt du service...');
     await client.destroy();
     process.exit(0);
+
 });
