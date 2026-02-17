@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7G Connect - WhatsApp Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #64748b;
+        }
+        
+        .status-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .status-connected {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-waiting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .qr-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+        
+        .qr-wrapper img {
+            max-width: 300px;
+            height: auto;
+            display: block;
+        }
+        
+        .info-card {
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #cbd5e1;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #475569;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        
+        .endpoints {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #e2e8f0;
+        }
+        
+        .endpoints h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .endpoint-item {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 8px;
+            background: #1e293b;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 30px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .token-display {
+            background: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-family: monospace;
+            font-size: 12px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 7G Connect</h1>
+            <p>Service WhatsApp professionnel</p>
+        </div>
+        
+        <div class="status-card">
+            <div id="statusBadge" class="status-badge status-waiting">
+                ⏳ Vérification du statut...
+            </div>
+            
+            <div id="qrContainer" class="qr-wrapper">
+                <div class="loading"></div>
+                <p style="color: #64748b; margin-top: 10px;">Chargement du QR code...</p>
+            </div>
+            
+            <div id="infoContainer" class="info-card" style="display: none;">
+                <div class="info-item">
+                    <span class="info-label">Numéro</span>
+                    <span class="info-value" id="phoneNumber">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Nom</span>
+                    <span class="info-value" id="pushName">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Statut</span>
+                    <span class="info-value" id="connectionStatus">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="endpoints">
+            <h3>🔌 API Endpoints</h3>
+            <div class="endpoint-item">GET  /api/status - Vérifier le statut</div>
+            <div class="endpoint-item">POST /api/send-message - Envoyer un message texte</div>
+            <div class="endpoint-item">POST /api/send-signature - Envoyer un lien de signature</div>
+            <div class="endpoint-item">POST /api/send-verification - Envoyer un code</div>
+            <div class="endpoint-item">POST /api/send-pdf - Envoyer un PDF</div>
+        </div>
+        
+        <div style="text-align: center;">
+            <span class="token-display" id="tokenDisplay">Token: wx78hj39...</span>
+        </div>
+        
+        <div class="footer">
+            <p>© 2026 7G Connect - Tous droits réservés</p>
+            <p style="margin-top: 5px;">Version 1.0.0 - Production Ready</p>
+        </div>
+    </div>
+    
+    <script>
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const statusBadge = document.getElementById('statusBadge');
+                const qrContainer = document.getElementById('qrContainer');
+                const infoContainer = document.getElementById('infoContainer');
+                
+                if (data.connected) {
+                    statusBadge.className = 'status-badge status-connected';
+                    statusBadge.innerHTML = '✅ Connecté';
+                    
+                    document.getElementById('phoneNumber').textContent = data.clientInfo?.me?.user || '-';
+                    document.getElementById('pushName').textContent = data.clientInfo?.pushname || '-';
+                    document.getElementById('connectionStatus').textContent = 'En ligne';
+                    
+                    infoContainer.style.display = 'block';
+                    qrContainer.style.display = 'none';
+                } else {
+                    statusBadge.className = 'status-badge status-waiting';
+                    statusBadge.innerHTML = '⏳ En attente de scan';
+                    
+                    // Vérifier si le QR code existe
+                    const qrResponse = await fetch('/qr.png?' + Date.now());
+                    if (qrResponse.ok) {
+                        qrContainer.innerHTML = '<img src="/qr.png?' + Date.now() + '" alt="QR Code">';
+                    }
+                    
+                    infoContainer.style.display = 'none';
+                    qrContainer.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        // Mettre à jour toutes les 5 secondes
+        setInterval(checkStatus, 5000);
+        checkStatus();
+    </script>
+</body>
+</html>
