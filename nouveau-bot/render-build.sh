@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o pipefail
+
+# Fonction de logging
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log "📦 Installation des dépendances..."
+
+# Nettoyage du cache npm si nécessaire
+npm cache verify
+
+# Installation plus rapide avec npm ci si package-lock.json existe
+if [ -f "package-lock.json" ]; then
+    npm ci --only=production
+else
+    npm install --production
+fi
+
+# Configuration du cache Puppeteer
+RENDER_CACHE_DIR="${RENDER_BUILD_CACHE:-/opt/render/.cache}"
+PUPPETEER_CACHE_DIR="${RENDER_CACHE_DIR}/puppeteer"
+mkdir -p "$PUPPETEER_CACHE_DIR"
+
+export PUPPETEER_CACHE_DIR="$PUPPETEER_CACHE_DIR"
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="false"
+
+log "🌐 Installation de Chrome pour Puppeteer..."
+
+# Installation silencieuse mais avec vérification
+if ! npx puppeteer browsers install chrome; then
+    log "❌ Échec de l'installation de Chrome"
+    exit 1
+fi
+
+# Vérification approfondie
+if [ -d "$PUPPETEER_CACHE_DIR/chrome" ]; then
+    CHROME_VERSION=$(ls "$PUPPETEER_CACHE_DIR/chrome" | head -1)
+    log "✅ Chrome installé: $CHROME_VERSION"
+else
+    log "⚠️ Chrome installé mais chemin non standard"
+fi
+
+# Nettoyage pour réduire la taille
+npm cache clean --force
+
+log "✅ Build terminé avec succès!"
